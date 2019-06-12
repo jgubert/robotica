@@ -2,7 +2,6 @@
 #define UTILS_H
 
 #include <sys/time.h>
-#include <unistd.h>
 #include <fstream>
 #include <iostream>
 #include <cmath>
@@ -10,7 +9,7 @@
 
 enum ConnectionMode {SIMULATION, SERIAL, WIFI};
 enum LogMode { NONE, RECORDING, PLAYBACK};
-enum MotionMode {MANUAL_SIMPLE, MANUAL_VEL, WANDER, WALLFOLLOW, POTFIELD, ENDING};
+enum MotionMode {MANUAL_SIMPLE, MANUAL_VEL, WANDER, WALLFOLLOW, ENDING};
 enum MovingDirection {STOP, FRONT, BACK, LEFT, RIGHT, RESTART, DEC_ANG_VEL, INC_ANG_VEL, INC_LIN_VEL, DEC_LIN_VEL};
 
 #define DEG2RAD(x) x*M_PI/180.0

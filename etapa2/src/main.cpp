@@ -1,9 +1,12 @@
 #include <pthread.h>
 #include <iostream>
 #include <string.h>
+//using namespace std;
 
 #include "Robot.h"
-#include "Planning.h"
+//#include "PioneerRobot.h"
+//#include "NAORobot.h"
+
 #include "GlutClass.h"
 
 ConnectionMode connectionMode;
@@ -35,22 +38,6 @@ void* startGlutThread (void* ref)
     glut->process();
 
 	return NULL;
-}
-
-void* startPlanningThread (void* ref)
-{
-    Robot* robot=(Robot*) ref;
-    while(!robot->isReady()){
-        std::cout << "Planning is waiting..." << std::endl;
-        usleep(100000);
-    }
-
-    while(robot->isRunning()){
-        robot->plan->run();
-        usleep(1000);
-    }
-
-    return NULL;
 }
 
 int main(int argc, char* argv[])
@@ -86,26 +73,20 @@ int main(int argc, char* argv[])
         }
     }
 
-    pthread_t robotThread, glutThread, potentialThread;
-
     Robot* r;
-    r = new Robot();
+     r = new Robot();
+//    r = new PioneerRobot();
+//    r = new NAORobot();
 
-    r->grid->mutex = new pthread_mutex_t;
-    if (pthread_mutex_init(r->grid->mutex,NULL) != 0){
-        printf("\n mutex init failed\n");
-        return 1;
-    }
+    pthread_t robotThread, glutThread;
+    mutex = new pthread_mutex_t;
+    pthread_mutex_unlock(mutex);
 
     pthread_create(&(robotThread),NULL,startRobotThread,(void*)r);
     pthread_create(&(glutThread),NULL,startGlutThread,(void*)r);
-    pthread_create(&(potentialThread),NULL,startPlanningThread,(void*)r);
 
     pthread_join(robotThread, 0);
     pthread_join(glutThread, 0);
-    pthread_join(potentialThread, 0);
-
-    pthread_mutex_destroy(r->grid->mutex);
 
     return 0;
 }

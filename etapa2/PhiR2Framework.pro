@@ -10,7 +10,6 @@ SOURCES += \
     src/main.cpp \
     src/Robot.cpp \
     src/Utils.cpp \
-    src/Planning.cpp
 
 OTHER_FILES += \
     CONTROLE.txt
@@ -21,7 +20,6 @@ HEADERS += \
     src/PioneerBase.h \
     src/Robot.h \
     src/Utils.h \
-    src/Planning.h
 
 
 INCLUDEPATH+=/usr/local/Aria/include

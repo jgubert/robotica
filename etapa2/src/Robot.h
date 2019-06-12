@@ -5,7 +5,6 @@
 
 #include "Grid.h"
 #include "PioneerBase.h"
-#include "Planning.h"
 #include "Utils.h"
 
 class Robot
@@ -27,7 +26,6 @@ public:
     bool isRunning();
 
     Grid* grid;
-    Planning* plan;
     MotionMode motionMode_;
     int viewMode;
     int numViewModes;
@@ -55,19 +53,13 @@ protected:
     void wallFollow();
     bool isFollowingLeftWall_;
 
-    void followPotentialField();
-
     // Mapping stuff
     float getOccupancyFromLogOdds(float logodds);
     void mappingWithHIMMUsingLaser();
     void mappingWithLogOddsUsingLaser();
     void mappingUsingSonar();
-    void drawPotGradient(double scale);
-
 
     Timer controlTimer;
-    void waitTime(float t);
-
 };
 
 #endif // ROBOT_H

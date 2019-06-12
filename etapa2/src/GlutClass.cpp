@@ -148,9 +148,7 @@ void GlutClass::render()
     }
 
     // Draw grid
-    pthread_mutex_lock(grid_->mutex);
     grid_->draw(xi, yi, xf, yf);
-    pthread_mutex_unlock(grid_->mutex);
 
     // Draw robot path
     if(drawRobotPath){
@@ -262,26 +260,6 @@ void GlutClass::keyboard(unsigned char key, int x, int y)
             instance->robot_->motionMode_ = WALLFOLLOW;
             std::cout << "MotionMode: 4 - WALLFOLLOW" << std::endl;
             break;
-        case '5':
-            instance->robot_->motionMode_ = POTFIELD;
-            break;
-        case '7':
-            instance->robot_->plan->curPref -= 0.1;
-            std::cout << "PREF: " << instance->robot_->plan->curPref << std::endl;
-            break;
-        case '8':
-            instance->robot_->plan->curPref -= 0.01;
-            std::cout << "PREF: " << instance->robot_->plan->curPref << std::endl;
-            break;
-        case '9':
-            instance->robot_->plan->curPref += 0.01;
-            std::cout << "PREF: " << instance->robot_->plan->curPref << std::endl;
-            break;
-        case '0':
-            instance->robot_->plan->curPref += 0.1;
-            std::cout << "PREF: " << instance->robot_->plan->curPref << std::endl;
-            break;
-
         case 'l': //Lock camera
             if(instance->lockCameraOnRobot == true){
                 instance->lockCameraOnRobot = false;
@@ -293,12 +271,6 @@ void GlutClass::keyboard(unsigned char key, int x, int y)
                 instance->x_aux = 0;
                 instance->y_aux = 0;
             }
-            break;
-        case 'f':
-            instance->grid_->showArrows=!instance->grid_->showArrows;
-            break;
-        case 'g':
-            instance->grid_->showValues=!instance->grid_->showValues;
             break;
         case 'r': //robot view mode
             instance->robot_->viewMode++;
@@ -314,6 +286,9 @@ void GlutClass::keyboard(unsigned char key, int x, int y)
             instance->grid_->viewMode--;
             if(instance->grid_->viewMode == -1)
                 instance->grid_->viewMode = instance->grid_->numViewModes-1;
+            break;
+        case 'g':
+            instance->grid_->showValues=!instance->grid_->showValues;
             break;
         case 'w':
             instance->y_aux -= 10;

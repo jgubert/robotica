@@ -1,10 +1,12 @@
 #include "Robot.h"
 
+#include <unistd.h>
 #include <GL/glut.h>
 #include <cmath>
 #include <iostream>
 
 #define PI 3.14159265
+
 
 //////////////////////////////////////
 ///// CONSTRUCTORS & DESTRUCTORS /////
@@ -17,13 +19,18 @@ Robot::Robot()
 
     grid = new Grid();
 
+    plan = new Planning();
+    plan->setGrid(grid);
+    plan->setMaxUpdateRange(base.getMaxLaserRange());
+
     // variables used for navigation
     isFollowingLeftWall_=false;
-    motionMode_ = MANUAL_SIMPLE;
 
     // variables used for visualization
-    viewMode=1;
+    viewMode=0;
     numViewModes=5;
+    motionMode_=MANUAL_SIMPLE;
+
 }
 
 Robot::~Robot()
@@ -79,15 +86,21 @@ void Robot::run()
 
     currentPose_ = base.getOdometry();
 
-    // Save path traversed by the robot
-    if(base.isMoving() || logMode_==PLAYBACK){
-        path_.push_back(base.getOdometry());
-    }
+    pthread_mutex_lock(grid->mutex);
 
     // Mapping
     mappingWithHIMMUsingLaser();
     mappingWithLogOddsUsingLaser();
     mappingUsingSonar();
+
+    pthread_mutex_unlock(grid->mutex);
+
+    plan->setNewRobotPose(currentPose_);
+
+    // Save path traversed by the robot
+    if(base.isMoving() || logMode_==PLAYBACK){
+        path_.push_back(base.getOdometry());
+    }
 
     // Navigation
     switch(motionMode_){
@@ -96,6 +109,9 @@ void Robot::run()
             break;
         case WALLFOLLOW:
             wallFollow();
+            break;
+        case POTFIELD:
+            followPotentialField();
             break;
         case ENDING:
             running_=false;
@@ -301,6 +317,51 @@ void Robot::wallFollow()
     */
 
     base.setWheelsVelocity_fromLinAngVelocity(linVel, angVel);
+}
+
+void Robot::followPotentialField()
+{
+    int scale = grid->getMapScale();
+    int robotX=currentPose_.x*scale;
+    int robotY=currentPose_.y*scale;
+    float robotAngle = currentPose_.theta;
+
+    Cell* c=grid->getCell(robotX,robotY);
+
+    float linVel, angVel;
+
+    // defining the robot velocities using a control strategy
+    // based on the direction of the gradient of c given by c->dirX and c->dirY
+
+    linVel=0.2;
+    angVel=0.0;
+
+    float dirX, dirY;
+    dirX = c->dirX;
+    dirY = c->dirY;
+
+    if(dirX == 0.0 && dirY == 0.0){
+        linVel = angVel = 0.0;
+    }else{
+
+        float phi = RAD2DEG(atan2(dirY,dirX)) - robotAngle;
+        phi = normalizeAngleDEG(phi);
+
+        if(phi<-90.0){
+            linVel = 0.0;
+            angVel = -0.5;
+        }else if(phi>90.0){
+            linVel = 0.0;
+            angVel = 0.5;
+        }else{
+            angVel = (phi/90.0)*(linVel*3.0);
+
+        }
+
+    }
+
+
+    base.setWheelsVelocity_fromLinAngVelocity(linVel,angVel);
 }
 
 ///////////////////////////
@@ -561,8 +622,10 @@ void Robot::draw(float xRobot, float yRobot, float angRobot)
 {
     float scale = grid->getMapScale();
     glTranslatef(xRobot,yRobot,0.0);
-    glRotatef(angRobot,0.0,0.0,1.0);
 
+    drawPotGradient(scale);
+
+    glRotatef(angRobot,0.0,0.0,1.0);
     glScalef(1.0/scale,1.0/scale,1.0/scale);
 
     // sonars and lasers draw in cm
@@ -581,6 +644,42 @@ void Robot::draw(float xRobot, float yRobot, float angRobot)
     glScalef(scale,scale,scale);
     glRotatef(-angRobot,0.0,0.0,1.0);
     glTranslatef(-xRobot,-yRobot,0.0);
+}
+
+void Robot::drawPotGradient(double scale)
+{
+    Cell* c;
+    int robotX=currentPose_.x*scale;
+    int robotY=currentPose_.y*scale;
+    c = grid->getCell(robotX,robotY);
+
+    glColor3f(0.0,0.6,0.2);
+    glLineWidth(3);
+    glBegin( GL_LINE_STRIP );
+    {
+        glVertex2f(0, 0);
+        glVertex2f(5*c->dirX, 5*c->dirY);
+    }
+    glEnd();
+}
+
+/////////////////////////
+///// OTHER METHODS /////
+/////////////////////////
+
+bool Robot::isReady()
+{
+    return ready_;
+}
+
+bool Robot::isRunning()
+{
+    return running_;
+}
+
+const Pose& Robot::getCurrentPose()
+{
+    return currentPose_;
 }
 
 void Robot::drawPath()
@@ -606,21 +705,11 @@ void Robot::drawPath()
     }
 }
 
-/////////////////////////
-///// OTHER METHODS /////
-/////////////////////////
-
-bool Robot::isReady()
-{
-    return ready_;
-}
-
-bool Robot::isRunning()
-{
-    return running_;
-}
-
-const Pose& Robot::getCurrentPose()
-{
-    return currentPose_;
+void Robot::waitTime(float t){
+    float l;
+    do{
+        usleep(1000);
+        l = controlTimer.getLapTime();
+    }while(l < t);
+    controlTimer.startLap();
 }

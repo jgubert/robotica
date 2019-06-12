@@ -1,34 +1,16 @@
 #ifndef __GRID_H__
 #define __GRID_H__
 
-#include <pthread.h>
-
-enum CellOccType {OCCUPIED, UNEXPLORED, FREE, NEAROBSTACLE};
-enum CellPlanType {REGULAR, FRONTIER, MARKED_FRONTIER, PATH, LOCALGOAL};
-//enum CellType {OCCUPIED, UNEXPLORED, FREE, NEAROBSTACLE, FRONTIER, MARKED_FRONTIER, PATH};
-
-
-#define UNDEF -10000000
-
 class Cell
 {
     public:
-        int x,y;        
-        int himm;
-        double logodds,occupancy;
+        int x,y;
+
+        double logodds, occupancy;
         double logoddsSonar,occupancySonar;
-        double pref, heur;
-        double distWalls, dirX, dirY;
+        int himm;
 
-        // used in A-Star
-        double f, g, h;
-        Cell* pi;
-
-        double pot;
-//        CellType type;
-
-        CellOccType occType;
-        CellPlanType planType;
+        void updateOccupancyFromLogOdds();
 };
 
 class Grid
@@ -46,9 +28,6 @@ class Grid
         int numViewModes;
         int viewMode;
         bool showValues;
-        bool showArrows;
-
-        pthread_mutex_t* mutex;
 
     private:
         int mapScale_; // Number of cells per meter

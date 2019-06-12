@@ -1,7 +1,6 @@
 #include "PioneerBase.h"
 
 #include <GL/glut.h>
-#include <limits.h>
 
 
 PioneerBase::PioneerBase()
@@ -15,8 +14,7 @@ PioneerBase::PioneerBase()
     numLasers_ = 181;
     lasers_.resize(numLasers_, 0.0);
     maxLaserRange_ = 6.5; // 5.0;
-    maxSonarRange_ = 5.0; // 5.0;
-
+    maxSonarRange_ = 5.0;
 
     // wheels' velocities
     vLeft_ = vRight_ = 0.0;
@@ -360,14 +358,14 @@ float PioneerBase::getMaxLaserRange()
     return maxLaserRange_;
 }
 
-int PioneerBase::getNumLasers()
-{
-    return numLasers_;
-}
-
 float PioneerBase::getMaxSonarRange()
 {
     return maxSonarRange_;
+}
+
+int PioneerBase::getNumLasers()
+{
+    return numLasers_;
 }
 
 int PioneerBase::getNumSonars()
@@ -467,15 +465,12 @@ float PioneerBase::getKthLaserReading(int k)
     return lasers_[k];
 }
 
-
 //////////////////////////////
 ///// NAVIGATION METHODS /////
 //////////////////////////////
 
 void PioneerBase::setMovementSimple(MovingDirection dir)
 {
-    double maxVel = 500;
-
     switch(dir){
         case FRONT:
             vLeft_ = 300;
@@ -506,15 +501,6 @@ void PioneerBase::setMovementSimple(MovingDirection dir)
             vRight_ = oldVRight_;
             break;
     }
-
-    if(vLeft_ > maxVel)
-        vLeft_ = maxVel;
-    else if(vLeft_ < -maxVel)
-        vLeft_ = -maxVel;
-    if(vRight_ > maxVel)
-        vRight_ = maxVel;
-    else if(vRight_ < -maxVel)
-        vRight_ = -maxVel;
 
     std::cout << "vLeft_:" << vLeft_ << " vRight_:" << vRight_ << std::endl;
 }
