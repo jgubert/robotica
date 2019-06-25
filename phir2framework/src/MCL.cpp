@@ -49,15 +49,12 @@ void MCL::sampling(const Action &u)
     alpha2 = 1;
     alpha3 = 1;
     alpha4 = 1;
-    /// Odometria definida pela estrutura Action, composta por 3 variaveis double:
-    /// rot1, trans e rot2
-    //std::cout << "rot1 " << RAD2DEG(u.rot1) << " trans " << u.trans << " rot2 " << RAD2DEG(u.rot2) << std::endl;
-        std::normal_distribution<double> samplerRot1(0.01, alpha1*u.rot1 + alpha2*u.trans);
-        std::normal_distribution<double> samplerTrans(0.01, alpha3*u.trans + alpha4*(u.rot1 + u.rot2));
-        std::normal_distribution<double> samplerRot2(0.01, alpha2*u.rot2 + alpha2*u.trans);
+
+    std::normal_distribution<double> samplerRot1(0.01, alpha1*u.rot1 + alpha2*u.trans);
+    std::normal_distribution<double> samplerTrans(0.01, alpha3*u.trans + alpha4*(u.rot1 + u.rot2));
+    std::normal_distribution<double> samplerRot2(0.01, alpha2*u.rot2 + alpha2*u.trans);
+
      for(i = 0; i < particles.size(); i++){
-       /// Seguindo o modelo de Thrun, devemos gerar 3 distribuicoes normais, uma para cada componente da odometria
-       /// Para definir uma distribuição normal X de media M e variancia V, pode-se usar:
            varRot1 = u.rot1 - samplerRot1(*generator);
            varTrans = u.trans - samplerTrans(*generator);
            varRot2 = u.rot2 - samplerRot2(*generator);
@@ -65,18 +62,11 @@ void MCL::sampling(const Action &u)
            particles.at(i).p.x += varTrans*cos(particles.at(i).p.theta + varRot1);
            particles.at(i).p.y += varTrans*sin(particles.at(i).p.theta + varRot1);
            particles.at(i).p.theta += (varRot1 + varRot2);
-       }
-    // std::normal_distribution<double> samplerX(M,V);
-    /// Para gerar amostras segundo a distribuicao acima, usa-se:
-    // double amostra = samplerX(*generator)
-    /// onde *generator é um gerador de numeros aleatorios (definido no construtor da classe)
-
-
+      }
 }
 
 void MCL::weighting(const std::vector<float> &z)
 {
-    /// TODO: faça a pesagem de todas as particulas
     int i, j;
     float zPart, zRobot, curProb;
     float var = 80;
@@ -84,21 +74,17 @@ void MCL::weighting(const std::vector<float> &z)
 
     sum = 0;
     for(i = 0; i < particles.size(); i++){
-    /// 1: elimine particulas fora do espaco livre
-    if(particles.at(i).p.x*scale < 0 || particles.at(i).p.x*scale > mapWidth ||
-        particles.at(i).p.y*scale < 0 || particles.at(i).p.y*scale > mapHeight){
+       if(particles.at(i).p.x*scale < 0 || particles.at(i).p.x*scale > mapWidth ||
+          particles.at(i).p.y*scale < 0 || particles.at(i).p.y*scale > mapHeight){
 
-        particles.at(i).w = 0;
-        continue;
+          particles.at(i).w = 0;
+          continue;
     }
 
     if(mapCells[(int)(particles[i].p.x*scale)][(int)(particles[i].p.y*scale)] != FREE){
         particles.at(i).w = 0;
         continue;
     }
-    /// 2: compare as observacoes da particula com as observacoes z do robo
-    // Use a funcao computeExpectedMeasurement(k, particles[i].p)
-    // para achar a k-th observacao esperada da particula i
     mult = 1.0;
     for(j = 0; j < 180; j+= 10){
         zPart = computeExpectedMeasurement(j, particles.at(i).p);
@@ -109,11 +95,10 @@ void MCL::weighting(const std::vector<float> &z)
     }
     particles.at(i).w = mult;
 
-    /// 3: normalize os pesos
         sum += particles.at(i).w;
     }
     if(sum == 0){
-        printf("SOMA DEU ZERO\n");
+        printf("Sum = 0\n");
         for(i = 0; i < particles.size(); i++){
             particles.at(i).w = 1.0/particles.size();
         }
@@ -127,16 +112,12 @@ void MCL::weighting(const std::vector<float> &z)
 
 void MCL::resampling()
 {
-    // gere uma nova geração de particulas com o mesmo tamanho do conjunto atual
     std::vector<MCLparticle> nextGeneration;
 
     float r, c, u;
     int i, j;
-    /// Para gerar amostras de uma distribuição uniforme entre valores MIN e MAX, pode-se usar:
     std::uniform_real_distribution<double> samplerU(0, 1.0/particles.size());
-    /// Para gerar amostras segundo a distribuicao acima, usa-se:
     r = samplerU(*generator);
-    /// onde *generator é um gerador de numeros aleatorios (definido no construtor da classe)
     c = particles.at(0).w;
     i = 0;
     for(j = 1; j <= particles.size(); j++){
@@ -331,15 +312,12 @@ void MCL::updateMeanAndCovariance()
         for(unsigned int c=0; c<2; c++)
             covariance[l][c] /= numParticles;
 
-    // Compute EigenValues and EigenVectors of covariance matrix
     float T = covariance[0][0] + covariance[1][1]; // Trace
     float D = covariance[0][0]*covariance[1][1] - covariance[0][1]*covariance[1][0]; // Determinant
 
     if((pow(T,2.0)/4.0 - D)<0.0)
         return;
 
-//    std::cout << "Covariance [" << covariance[0][0] << " " << covariance[0][1]
-//                        << "; " << covariance[1][0] << " " << covariance[1][1] << std::endl;
 
     float lambda1 = T/2.0 + sqrt(pow(T,2.0)/4.0 - D);
     float lambda2 = T/2.0 - sqrt(pow(T,2.0)/4.0 - D);
@@ -356,18 +334,12 @@ void MCL::updateMeanAndCovariance()
         eigvec1[1] = 0;    eigvec2[1] = 1;
     }
 
-//    std::cout << "lambda " << lambda1 << " and " << lambda2 << std::endl;
-//    std::cout << "eigvectors [" << eigvec1[0] << "; " << eigvec1[1]
-//              << "] and [" << eigvec1[0] << "; " << eigvec1[1] << "]" << std::endl;
 
-    // Compute direction of covariance ellipse
-    //1st - Calculate the angle between the largest eigenvector and the x-axis
     covAngle = RAD2DEG(atan2(eigvec1[1], eigvec1[0]));
 
-    //2nd - Calculate the size of the minor and major axes
     covMajorAxis = sqrt(lambda1);
     covMinorAxis = sqrt(lambda2);
-//    std::cout << "covAngle " << covAngle << " covMajorAxis " << covMajorAxis << " covMinorAxis " << covMinorAxis << std::endl;
+
 }
 
 ////////////////////////////
@@ -377,20 +349,20 @@ void MCL::updateMeanAndCovariance()
 void Ellipse(float rx, float ry, float angle, int num_segments=80)
 {
     float theta = 2 * M_PI / float(num_segments);
-    float c = cos(theta);//precalculate the sine and cosine
+    float c = cos(theta);
     float s = sin(theta);
     float t;
 
-    float x = 1;//we start at angle = 0
+    float x = 1;
     float y = 0;
 
     glRotatef(angle,0,0,1);
     glBegin(GL_LINE_LOOP);
     for(int ii = 0; ii < num_segments; ii++)
     {
-        glVertex2f(x*rx, y*ry);//output vertex
+        glVertex2f(x*rx, y*ry);
 
-        //apply the rotation matrix
+
         t = x;
         x = c * x - s * y;
         y = s * t + c * y;
@@ -401,7 +373,7 @@ void Ellipse(float rx, float ry, float angle, int num_segments=80)
 
 void MCL::draw()
 {
-    // Draw map
+
     for(int x=0;x<mapWidth;x++){
         for(int y=0;y<mapHeight;y++){
 
@@ -433,14 +405,14 @@ void MCL::draw()
     else
         alpha = 1.0;
 
-    // Draw particles
+
     for(int p=0;p<particles.size();p++){
 
         double x=particles[p].p.x*scale;
         double y=particles[p].p.y*scale;
         double th=particles[p].p.theta;
 
-        // Draw point
+
         glColor4f(1.0,0.0,0.0,alpha);
         glBegin( GL_POINTS );
         {
@@ -448,7 +420,7 @@ void MCL::draw()
         }
         glEnd();
 
-        // Draw direction
+
         glColor4f(0.0, 0.0, 1.0, alpha);
         glBegin( GL_LINES );
         {
@@ -459,7 +431,7 @@ void MCL::draw()
     }
     glLineWidth(1);
 
-    // Draw RED X at goal pose
+
     double xGoal = goal.x*scale;
     double yGoal = goal.y*scale;
     glTranslatef(xGoal,yGoal,0.0);
@@ -484,7 +456,7 @@ void MCL::draw()
     glScalef(2,2,2);
     glTranslatef(-xGoal,-yGoal,0.0);
 
-    // Draw mean particle pose
+
     double xRobot = meanParticlePose.x*scale;
     double yRobot = meanParticlePose.y*scale;
     double angRobot = RAD2DEG(meanParticlePose.theta);
@@ -516,10 +488,10 @@ void MCL::draw()
     glRotatef(-angRobot,0.0,0.0,1.0);
     glTranslatef(-xRobot,-yRobot,0.0);
 
-    // Draw Covariance Ellipse
+
     glColor3f(0.0,0.4,0.0);
     glLineWidth(2);
-    double chisquare_val = 2.4477; // 95% confidence interval
+    double chisquare_val = 2.4477;
     glTranslatef(xRobot,yRobot,0.0);
     Ellipse(chisquare_val*covMajorAxis*scale, chisquare_val*covMinorAxis*scale,covAngle);
     glTranslatef(-xRobot,-yRobot,0.0);
