@@ -7,7 +7,6 @@ class Planning;
 #include <queue>
 #include "Robot.h"
 #include "Grid.h"
-#include "Utils.h"
 
 typedef struct
 {
@@ -30,7 +29,6 @@ class Planning {
         void initialize();
 
         void setNewRobotPose(Pose p);
-        void setGoalPose(Pose p);
         void setGrid(Grid* g);
         void setMaxUpdateRange(int r);
 
@@ -54,7 +52,6 @@ class Planning {
         void iteratePotentials();
         void updateGradient();
 
-        Pose *goalPose;
 
         point2d robotPosition;
         bbox gridLimits;

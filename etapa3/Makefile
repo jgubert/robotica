@@ -6,7 +6,7 @@ ARIA_LINK=-L/usr/local/Aria/lib -lAria -lpthread -ldl -lrt
 
 LFLAGS = $(ARIA_LINK) -lglut -lGL -lfreeimage
 
-OBJS = Utils.o Grid.o GlutClass.o MCL.o Planning.o PioneerBase.o Robot.o main.o
+OBJS = Utils.o Grid.o GlutClass.o Planning.o PioneerBase.o Robot.o main.o
 
 MKDIR_P = mkdir -p
 OUT_DIR=../build-make

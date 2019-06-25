@@ -31,12 +31,10 @@ GlutClass* GlutClass::getInstance ()
 
 void GlutClass::initialize()
 {
-    halfWindowSize = halfWindowSize_MCL = 50;
-    x_aux = x_aux_MCL = 0;
-    y_aux = y_aux_MCL = 0;
+    halfWindowSize = 50;
+    x_aux = 0;
+    y_aux = 0;
     glutWindowSize = 700;
-
-    viewingMCL = true;
 
     // Wait for the robot's initialization
     while(robot_->isReady() == false){
@@ -91,39 +89,6 @@ void GlutClass::render()
 {
     if(robot_->isRunning() == false){
         exit(0);
-    }
-
-    if(viewingMCL){
-        // Desenha MCL
-        int h = robot_->mcl->mapHeight;
-        int w = robot_->mcl->mapWidth;
-
-        // Atualiza a região da janela
-        glMatrixMode (GL_PROJECTION);
-        glLoadIdentity ();
-        if(w > h){
-            glOrtho (0 + x_aux_MCL + halfWindowSize_MCL,
-                     w + x_aux_MCL - halfWindowSize_MCL,
-                     -(w-h)/2 + y_aux_MCL + halfWindowSize_MCL,
-                     h+(w-h)/2 + y_aux_MCL - halfWindowSize_MCL,
-                     -1, 50);
-        }else{
-            glOrtho (-(h-w)/2 + x_aux_MCL + halfWindowSize_MCL,
-                     w+(h-w)/2 + x_aux_MCL - halfWindowSize_MCL,
-                     0 + y_aux_MCL + halfWindowSize_MCL,
-                     h + y_aux_MCL - halfWindowSize_MCL,
-                     -1, 50);
-        }
-        glMatrixMode (GL_MODELVIEW);
-
-        glClearColor(1.0, 1.0, 1.0, 1.0);
-        glClear (GL_COLOR_BUFFER_BIT);
-
-        robot_->drawMCL();
-
-        glutSwapBuffers();
-        glutPostRedisplay();
-        return;
     }
 
     int mapWidth = grid_->getMapWidth();
@@ -300,6 +265,23 @@ void GlutClass::keyboard(unsigned char key, int x, int y)
         case '5':
             instance->robot_->motionMode_ = POTFIELD;
             break;
+        case '7':
+            instance->robot_->plan->curPref -= 0.1;
+            std::cout << "PREF: " << instance->robot_->plan->curPref << std::endl;
+            break;
+        case '8':
+            instance->robot_->plan->curPref -= 0.01;
+            std::cout << "PREF: " << instance->robot_->plan->curPref << std::endl;
+            break;
+        case '9':
+            instance->robot_->plan->curPref += 0.01;
+            std::cout << "PREF: " << instance->robot_->plan->curPref << std::endl;
+            break;
+        case '0':
+            instance->robot_->plan->curPref += 0.1;
+            std::cout << "PREF: " << instance->robot_->plan->curPref << std::endl;
+            break;
+
         case 'l': //Lock camera
             if(instance->lockCameraOnRobot == true){
                 instance->lockCameraOnRobot = false;
@@ -322,92 +304,46 @@ void GlutClass::keyboard(unsigned char key, int x, int y)
             instance->robot_->viewMode++;
             if(instance->robot_->viewMode == instance->robot_->numViewModes)
                 instance->robot_->viewMode = 0;
+            break;
         case 'v': //view mode
             instance->grid_->viewMode++;
             if(instance->grid_->viewMode == instance->grid_->numViewModes)
                 instance->grid_->viewMode = 0;
-
-            if(instance->grid_->viewMode == instance->grid_->numViewModes-1)
-                instance->viewingMCL = true;
-            else
-                instance->viewingMCL = false;
             break;
         case 'b': //view mode
             instance->grid_->viewMode--;
             if(instance->grid_->viewMode == -1)
                 instance->grid_->viewMode = instance->grid_->numViewModes-1;
-
-            if(instance->grid_->viewMode == instance->grid_->numViewModes-1)
-                instance->viewingMCL = true;
-            else
-                instance->viewingMCL = false;
-           break;
-        case 't': //view mode
-            if(instance->robot_->mcl != NULL){
-                instance->robot_->mcl->transparency = !instance->robot_->mcl->transparency;
-            }
             break;
         case 'w':
-            if(instance->viewingMCL){
-                instance->y_aux_MCL -= 10;
-            }else{
-                instance->y_aux -= 10;
-                std::cout << "x_aux: " << instance->x_aux << " y_aux: " << instance->y_aux << " halfWindowSize:" << instance->halfWindowSize << std::endl;
-            }
+            instance->y_aux -= 10;
+            std::cout << "x_aux: " << instance->x_aux << " y_aux: " << instance->y_aux << " halfWindowSize:" << instance->halfWindowSize << std::endl;
             break;
         case 'd':
-            if(instance->viewingMCL){
-                instance->x_aux_MCL += 10;
-            }else{
-                instance->x_aux += 10;
-                std::cout << "x_aux: " << instance->x_aux << " y_aux: " << instance->y_aux << " halfWindowSize:" << instance->halfWindowSize << std::endl;
-            }
+            instance->x_aux += 10;
+            std::cout << "x_aux: " << instance->x_aux << " y_aux: " << instance->y_aux << " halfWindowSize:" << instance->halfWindowSize << std::endl;
             break;
         case 'a':
-            if(instance->viewingMCL){
-                instance->x_aux_MCL -= 10;
-            }else{
-                instance->x_aux -= 10;
-                std::cout << "x_aux: " << instance->x_aux << " y_aux: " << instance->y_aux << " halfWindowSize:" << instance->halfWindowSize << std::endl;
-            }
+            instance->x_aux -= 10;
+            std::cout << "x_aux: " << instance->x_aux << " y_aux: " << instance->y_aux << " halfWindowSize:" << instance->halfWindowSize << std::endl;
             break;
         case 's':
-            if(instance->viewingMCL){
-                instance->y_aux_MCL += 10;
-            }else{
-                instance->y_aux += 10;
-                std::cout << "x_aux: " << instance->x_aux << " y_aux: " << instance->y_aux << " halfWindowSize:" << instance->halfWindowSize << std::endl;
-            }
+            instance->y_aux += 10;
+            std::cout << "x_aux: " << instance->x_aux << " y_aux: " << instance->y_aux << " halfWindowSize:" << instance->halfWindowSize << std::endl;
             break;
         case 'm':
             instance->screenshot();
             break;
         case '-':
-            if(instance->viewingMCL){
-                instance->halfWindowSize_MCL -= 10;
-
-                int size = std::max(instance->robot_->mcl->mapHeight,instance->robot_->mcl->mapWidth);
-                if(instance->halfWindowSize_MCL < -size/3)
-                    instance->halfWindowSize_MCL = -size/3;
-            }else{
-                instance->halfWindowSize += 10;
-                if((unsigned int)instance->halfWindowSize > instance->grid_->getMapWidth()/2)
-                    instance->halfWindowSize = instance->grid_->getMapWidth()/2;
-            }
+            instance->halfWindowSize += 10;
+            if((unsigned int)instance->halfWindowSize > instance->grid_->getMapWidth()/2)
+                instance->halfWindowSize = instance->grid_->getMapWidth()/2;
             break;
         case '+': 
         case '=':
-            if(instance->viewingMCL){
-                instance->halfWindowSize_MCL += 10;
-
-                int size = std::max(instance->robot_->mcl->mapHeight,instance->robot_->mcl->mapWidth);
-                if(instance->halfWindowSize_MCL > size/3)
-                    instance->halfWindowSize_MCL = size/3;
-            }else{
-                instance->halfWindowSize -= 10;
-                if(instance->halfWindowSize < instance->grid_->getMapScale())
-                    instance->halfWindowSize = instance->grid_->getMapScale();
-            }
+            instance->halfWindowSize -= 10;
+            if(instance->halfWindowSize < instance->grid_->getMapScale())
+                instance->halfWindowSize = instance->grid_->getMapScale();
             break;
         default:
             break;

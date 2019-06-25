@@ -7,7 +7,6 @@
 #include "PioneerBase.h"
 #include "Planning.h"
 #include "Utils.h"
-#include "MCL.h"
 
 class Robot
 {
@@ -15,15 +14,14 @@ public:
     Robot();
     ~Robot();
 
-    void initialize(ConnectionMode cmode, LogMode lmode, std::string fname, std::string mapName);
+    void initialize(ConnectionMode cmode, LogMode lmode, std::string fname);
     void run();
-
-    const Pose& getCurrentPose();
 
     void move(MovingDirection dir);
     void draw(float xRobot, float yRobot, float angRobot);
     void drawPath();
-    void drawMCL();
+
+    const Pose& getCurrentPose();
 
     bool isReady();
     bool isRunning();
@@ -33,12 +31,11 @@ public:
     MotionMode motionMode_;
     int viewMode;
     int numViewModes;
-    MCL* mcl;
+
 
 protected:
 
     Pose currentPose_;
-    Pose prevLocalizationPose_;
     std::vector<Pose> path_;
 
     bool ready_;
@@ -70,7 +67,6 @@ protected:
 
     Timer controlTimer;
     void waitTime(float t);
-    bool firstIteration;
 
 };
 

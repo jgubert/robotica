@@ -5,6 +5,8 @@
 
 enum CellOccType {OCCUPIED, UNEXPLORED, FREE, NEAROBSTACLE};
 enum CellPlanType {REGULAR, FRONTIER, MARKED_FRONTIER, PATH, LOCALGOAL};
+//enum CellType {OCCUPIED, UNEXPLORED, FREE, NEAROBSTACLE, FRONTIER, MARKED_FRONTIER, PATH};
+
 
 #define UNDEF -10000000
 
@@ -15,6 +17,7 @@ class Cell
         int himm;
         double logodds,occupancy;
         double logoddsSonar,occupancySonar;
+        double pref, heur;
         double distWalls, dirX, dirY;
 
         // used in A-Star
@@ -22,6 +25,7 @@ class Cell
         Cell* pi;
 
         double pot;
+//        CellType type;
 
         CellOccType occType;
         CellPlanType planType;

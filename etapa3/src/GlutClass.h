@@ -22,9 +22,8 @@ class GlutClass
         int glutWindowSize;
         int frame;
 
-        int halfWindowSize, x_aux, y_aux;
-        int halfWindowSize_MCL, x_aux_MCL, y_aux_MCL;
-        bool viewingMCL;
+        int halfWindowSize;
+        int x_aux, y_aux;
 
     private:
         GlutClass ();

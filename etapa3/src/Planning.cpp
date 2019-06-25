@@ -1,7 +1,10 @@
+#include "Robot.h"
 #include "Planning.h"
+
 
 #include <queue>
 #include <float.h> //DBL_MAX
+#define PI 3.14159265
 
 ////////////////////////
 ///                  ///
@@ -50,12 +53,6 @@ void Planning::setNewRobotPose(Pose p)
     newGridLimits.maxX = std::max(newGridLimits.maxX,newRobotPosition.x+maxUpdateRange);
     newGridLimits.minY = std::min(newGridLimits.minY,newRobotPosition.y-maxUpdateRange);
     newGridLimits.maxY = std::max(newGridLimits.maxY,newRobotPosition.y+maxUpdateRange);
-}
-
-void Planning::setGoalPose(Pose p)
-{
-    goalPose->x = p.x;
-    goalPose->y = p.y;
 }
 
 void Planning::run()
@@ -166,7 +163,7 @@ void Planning::updateCellsTypes()
         }
     }
 }
-
+//updateCellsTypes done!
 void Planning::expandObstacles()
 {
     int width=1;
@@ -288,18 +285,12 @@ void Planning::detectFrontiers()
     }
 
 
-//    std::cout << "Number of frontiers: " << frontierCenters.size() << std::endl;
+    std::cout << "Number of frontiers: " << frontierCenters.size() << std::endl;
     for(int k=0;k<frontierCenters.size();k++){
         frontierCenters[k]->planType = FRONTIER;
     }
 
 }
-
-//////////////////////////////////////////////////////
-///                                                ///
-/// Métodos para planejamento de caminhos - A-STAR ///
-///                                                ///
-//////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////
 ///                                                ///
@@ -351,6 +342,7 @@ void Planning::computeHeuristic()
         }
     }
 }
+
 
 // eight neighbors offset
 // usage, i-th neighbor:    n = grid->getCell(c->x+offset[i][0],c->y+offset[i][1]);
@@ -475,6 +467,8 @@ void Planning::computeAStar()
 
 }
 
+
+
 void Planning::markPathCells()
 {
     if(goal != NULL){
@@ -494,14 +488,15 @@ void Planning::findLocalGoal()
     while(c != NULL){
         double dist = sqrt(pow(c->x-robotPosition.x,2.0)+pow(c->y-robotPosition.y,2.0));
         if(dist < localGoalRadius){
-            localGoal = c;
+            //localGoal = c;
             break;
         }
         c = c->pi;
     }
 
-    localGoal->planType = LOCALGOAL;
+   // localGoal->planType = LOCALGOAL;
 }
+
 
 ///////////////////////////////////////////////////
 ///                                             ///
@@ -555,58 +550,56 @@ void Planning::initializePotentials()
 void Planning::iteratePotentials()
 {
     Cell* c;
-
+    int x, y;
+    float h, d;
     Cell *left,*right,*up,*down;
 
-    for (int x = robotPosition.x-halfWindowSize; x <= robotPosition.x+halfWindowSize; x++){
-        for (int y = robotPosition.y-halfWindowSize; y <= robotPosition.y+halfWindowSize; y++){
-            Cell *c = grid->getCell(x, y);
+    for(x = gridLimits.minX; x < gridLimits.maxX; x++){
+        for(y = gridLimits.minY; y < gridLimits.maxY; y++){
 
-            if(c->occType == FREE || c->occType == UNEXPLORED){
-                if(c->planType != LOCALGOAL) {
+            c = grid->getCell(x,y);
+            if(c->occType == FREE){
+                left = grid->getCell(x-1, y);
+                right = grid->getCell(x+1, y);
+                up = grid->getCell(x, y+1);
+                down = grid->getCell(x, y-1);
 
-                    Cell *left = grid->getCell(x-1, y);
-                    Cell *up = grid->getCell(x, y+1);
-                    Cell *right = grid->getCell(x+1, y);
-                    Cell *down = grid->getCell(x, y-1);
-
-                    c->pot = (left->pot + up->pot + right->pot + down->pot)/4;
-
-                }
+                h = (left->pot + right->pot + up->pot + down->pot)/4;
+                d = abs(up->pot - down->pot)/2 + abs(right->pot - left->pot)/2;
+                c->pot = h - (c->pref/4)*d;
             }
         }
     }
 }
-
+//iteratePotentials done!
 void Planning::updateGradient()
 {
     Cell* c;
+    int x, y;
+    double norm;
     Cell *left,*right,*up,*down;
 
-  for (int x = robotPosition.x-halfWindowSize; x <= robotPosition.x+halfWindowSize; x++){
-      for (int y = robotPosition.y-halfWindowSize; y <= robotPosition.y+halfWindowSize; y++){
-          Cell* c = grid->getCell(x, y);
+    for(x = gridLimits.minX; x < gridLimits.maxX; x++){
+        for(y = gridLimits.minY; y < gridLimits.maxY; y++){
 
-          if(c->occType == FREE){
-              Cell *left = grid->getCell(x-1, y);
-              Cell *up = grid->getCell(x, y+1);
-              Cell *right = grid->getCell(x+1, y);
-              Cell *down = grid->getCell(x, y-1);
+            c = grid->getCell(x,y);
+            if(c->occType == FREE){
+                left = grid->getCell(x-1, y);
+                right = grid->getCell(x+1, y);
+                up = grid->getCell(x, y+1);
+                down = grid->getCell(x, y-1);
 
-              float gradX = -((right->pot - left->pot)/2);
-              float gradY = -((up->pot - down->pot)/2);
-              float norm = sqrt(pow(gradX,2) + pow(gradY,2));
-              gradX = gradX/norm;
-              gradY = gradY/norm;
-
-              c->dirX = gradX;
-              c->dirY = gradY;
-          }
-          else{
-              c->dirX = 0;
-              c->dirY = 0;
-          }
-
-      }
-  }
+                c->dirY = -(up->pot - down->pot)/2;
+                c->dirX = -(right->pot - left->pot)/2;
+                norm = sqrt(pow(c->dirX,2) + pow(c->dirY,2));
+                c->dirX /= norm;
+                c->dirY /= norm;
+            }
+            else{
+                c->dirX = 0;
+                c->dirY = 0;
+            }
+        }
+    }
 }
+//updateGradient done!

@@ -16,8 +16,10 @@ Robot::Robot()
 {
     ready_ = false;
     running_ = true;
+    firstIteration = true;
 
     grid = new Grid();
+    mcl = NULL;
 
     plan = new Planning();
     plan->setGrid(grid);
@@ -44,11 +46,11 @@ Robot::~Robot()
 ///// INITIALIZE & RUN METHODS /////
 ////////////////////////////////////
 
-void Robot::initialize(ConnectionMode cmode, LogMode lmode, std::string fname)
+void Robot::initialize(ConnectionMode cmode, LogMode lmode, std::string fname, std::string mapName)
 {
     logMode_ = lmode;
-//    logFile_ = new LogFile(logMode_,fname);
-    ready_ = true;
+
+    mcl = new MCL(base.getMaxLaserRange(),mapName,grid->mutex);
 
     // initialize ARIA
     if(logMode_!=PLAYBACK){
@@ -85,6 +87,23 @@ void Robot::run()
     }
 
     currentPose_ = base.getOdometry();
+    if(firstIteration){
+        prevLocalizationPose_ = currentPose_;
+        firstIteration = false;
+    }
+
+    Action u;
+    u.rot1 = atan2(currentPose_.y-prevLocalizationPose_.y,currentPose_.x-prevLocalizationPose_.x)-DEG2RAD(currentPose_.theta);
+    u.trans = sqrt(pow(currentPose_.x-prevLocalizationPose_.x,2)+pow(currentPose_.y-prevLocalizationPose_.y,2));
+    u.rot2 = DEG2RAD(currentPose_.theta)-DEG2RAD(prevLocalizationPose_.theta)-u.rot1;
+
+    // check if there is enough robot motion
+    if(u.trans > 0.1 || fabs(u.rot1) > DEG2RAD(30) || fabs(u.rot2) > DEG2RAD(30))
+    {
+        std::cout << currentPose_ << std::endl;
+        mcl->run(u,base.getLaserReadings());
+        prevLocalizationPose_ = currentPose_;
+    }
 
     pthread_mutex_lock(grid->mutex);
 
@@ -347,10 +366,10 @@ void Robot::followPotentialField()
         float phi = RAD2DEG(atan2(dirY,dirX)) - robotAngle;
         phi = normalizeAngleDEG(phi);
 
-        if(phi<-90.0){
+        if(phi<-60.0){
             linVel = 0.0;
             angVel = -0.5;
-        }else if(phi>90.0){
+        }else if(phi>60.0){
             linVel = 0.0;
             angVel = 0.5;
         }else{
@@ -680,6 +699,11 @@ bool Robot::isRunning()
 const Pose& Robot::getCurrentPose()
 {
     return currentPose_;
+}
+
+void Robot::drawMCL()
+{
+    mcl->draw();
 }
 
 void Robot::drawPath()

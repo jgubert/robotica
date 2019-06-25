@@ -32,9 +32,13 @@ Grid::Grid ()
             cells_[c].himm = 7;
 
             cells_[c].pot=0.5;
+            cells_[c].heur=-1;
+            cells_[c].pref = 0.0;
 
             cells_[c].occType = UNEXPLORED;
             cells_[c].planType = REGULAR;
+//            cells_[c].type = UNEXPLORED;
+
 
             cells_[c].f = DBL_MAX;
             cells_[c].g = DBL_MAX;
@@ -48,8 +52,8 @@ Grid::Grid ()
         }
     }
 
-    numViewModes=6;
-    viewMode=5;
+    numViewModes=5;
+    viewMode=0;
 
     showValues=false;
     showArrows=false;
